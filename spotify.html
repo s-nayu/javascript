@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spotify 日本のランキング</title>
+</head>
+<body>
+    <h1>Spotify 日本のトップトラック</h1>
+    <button id="login-btn">Spotifyにログイン</button>
+    <div id="tracks"></div>
+
+    <script>
+        const CLIENT_ID = '1c32ddda9fa944bab9caee5581023a72'; // Spotify DeveloperのClient ID
+        const CLIENT_SECRET = '7c1ec830b54644da8f77a66aa11f2b0f'; // 例: http://localhost:8000
+        
+        const loginButton = document.getElementById('login-btn');
+        const tracksDiv = document.getElementById('tracks');
+
+        // Spotify認証URL
+        const AUTH_URL = `https://accounts.spotify.com/authorize?client_id=${CLIENT_ID}&response_type=token&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=${encodeURIComponent(SCOPES)}`;
+
+        loginButton.addEventListener('click', () => {
+            window.location.href = AUTH_URL;
+        });
+
+        // URLからアクセストークンを取得
+        window.addEventListener('load', () => {
+            const hash = window.location.hash;
+            if (hash) {
+                const params = new URLSearchParams(hash.substring(1));
+                const accessToken = params.get('access_token');
+
+                if (accessToken) {
+                    fetchTopTracks(accessToken);
+                }
+            }
+        });
+
+        // トップトラックを取得
+        function fetchTopTracks(accessToken) {
+            const url = 'https://api.spotify.com/v1/me/top/tracks?limit=10'; // トップトラックを10件取得
+            fetch(url, {
+                headers: {
+                    Authorization: `Bearer ${accessToken}`
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                displayTopTracks(data);
+            })
+            .catch(error => {
+                console.error('エラー:', error);
+            });
+        }
+
+        // トップトラックを表示
+        function displayTopTracks(data) {
+            tracksDiv.innerHTML = '<h2>トップトラック</h2>';
+            const list = document.createElement('ul');
+            data.items.forEach(track => {
+                const listItem = document.createElement('li');
+                listItem.innerHTML = `
+                    <strong>${track.name}</strong> by ${track.artists.map(artist => artist.name).join(', ')}
+                    <br>
+                    <img src="${track.album.images[0].url}" alt="${track.name}" width="100">
+                    <br>
+                    <a href="${track.external_urls.spotify}" target="_blank">Spotifyで聴く</a>
+                `;
+                list.appendChild(listItem);
+            });
+            tracksDiv.appendChild(list);
+        }
+    </script>
+</body>
+</html>
